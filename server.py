@@ -16,6 +16,8 @@ from datetime import datetime
 from flask import Flask, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 from service_streamer import ThreadedStreamer, Streamer
+import requests
+from io import BytesIO
 
 EVAL_MAX_CLICKS = 20
 MODEL_THRESH = 0.49
@@ -38,6 +40,27 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 10 # 10MB max
 app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif']
 
+# 实际生产中使用的接口
+@app.route("/interactive_segmentation_pro",methods=["POST"])
+def check_polygon():
+    file_url = request.json["file_url"]
+    click_history = request.json["click_history"]
+    prev_polygon = request.json["prev_polygon"]
+
+    img = Image.open(BytesIO(requests.get(file_url).content))
+    # processing imputs
+    img_np, clicks, prev_mask = processing_inputs(img, click_history, prev_polygon)
+    
+    # make prediction
+    pred_probs = streamer.predict([(img_np, clicks, prev_mask)])
+    
+    # prepare result
+    results = prepare_result(img_np, pred_probs, clicks, None, 1, False, os.path.basename(file_url))
+
+    # return
+    return jsonify(results)
+
+#  测试对比使用
 @app.route("/interactive_segmentation", methods=["POST"])
 def main():
     """Main method for interactive segmentation
