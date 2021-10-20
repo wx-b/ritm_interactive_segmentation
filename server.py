@@ -18,6 +18,7 @@ from werkzeug.utils import secure_filename
 from service_streamer import ThreadedStreamer, Streamer
 import requests
 from io import BytesIO
+from functools import 
 
 EVAL_MAX_CLICKS = 20
 MODEL_THRESH = 0.49
@@ -39,6 +40,7 @@ predictor = get_predictor(model, brs_mode, device, prob_thresh=MODEL_THRESH)
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 10 # 10MB max
 app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif']
+request_count = 0
 
 # 实际生产中使用的接口
 @app.route("/interactive_segmentation_pro",methods=["POST"])
@@ -56,6 +58,11 @@ def check_polygon():
     
     # prepare result
     results = prepare_result(img_np, pred_probs, clicks, None, 1, False, os.path.basename(file_url))
+    if request_count< 100:
+        request_count+=1
+    else:
+        request_count = 0
+        torch.cuda.empty_cache() if torch.cuda.is_available() else None
 
     # return
     return jsonify(results)
