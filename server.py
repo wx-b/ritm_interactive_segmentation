@@ -18,7 +18,6 @@ from werkzeug.utils import secure_filename
 from service_streamer import ThreadedStreamer, Streamer
 import requests
 from io import BytesIO
-from functools import 
 
 EVAL_MAX_CLICKS = 20
 MODEL_THRESH = 0.49
