@@ -57,11 +57,11 @@ def check_polygon():
     
     # prepare result
     results = prepare_result(img_np, pred_probs, clicks, None, 1, False, os.path.basename(file_url))
-    if request_count< 100:
-        request_count+=1
-    else:
-        request_count = 0
-        torch.cuda.empty_cache() if torch.cuda.is_available() else None
+    # if request_count < 100:
+    #     request_count+=1
+    # else:
+    #     request_count = 0
+    #     torch.cuda.empty_cache() if torch.cuda.is_available() else None
 
     # return
     return jsonify(results)
