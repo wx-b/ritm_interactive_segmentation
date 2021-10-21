@@ -13,7 +13,7 @@ from skimage import measure
 from PIL import Image, ImageDraw, ImageFont
 from imantics import Polygons, Mask, Annotation
 from datetime import datetime
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file,g
 from werkzeug.utils import secure_filename
 from service_streamer import ThreadedStreamer, Streamer
 import requests
@@ -39,11 +39,18 @@ predictor = get_predictor(model, brs_mode, device, prob_thresh=MODEL_THRESH)
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 10 # 10MB max
 app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif']
-request_count = 0
+request_count = [0]
 
 # 实际生产中使用的接口
 @app.route("/interactive_segmentation_pro",methods=["POST"])
 def check_polygon():
+    if request_count[0] < 100:
+        request_count[0]+=1
+    else:
+        print(request_count[0])
+        print("clear")
+        request_count[0] = 0
+        torch.cuda.empty_cache() if torch.cuda.is_available() else None
     file_url = request.json["file_url"]
     click_history = request.json["click_history"]
     prev_polygon = request.json["prev_polygon"]
@@ -54,15 +61,9 @@ def check_polygon():
     
     # make prediction
     pred_probs = streamer.predict([(img_np, clicks, prev_mask)])
-    
+     
     # prepare result
     results = prepare_result(img_np, pred_probs, clicks, None, 1, False, os.path.basename(file_url))
-    # if request_count < 100:
-    #     request_count+=1
-    # else:
-    #     request_count = 0
-    #     torch.cuda.empty_cache() if torch.cuda.is_available() else None
-
     # return
     return jsonify(results)
 
