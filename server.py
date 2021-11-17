@@ -43,7 +43,7 @@ request_count = [0]
 
 # 实际生产中使用的接口
 @app.route("/interactive_segmentation_pro",methods=["POST"])
-def check_polygon():
+def interactive_segmentation():
     if request_count[0] < 100:
         request_count[0]+=1
     else:
@@ -63,7 +63,7 @@ def check_polygon():
     pred_probs = streamer.predict([(img_np, clicks, prev_mask)])
      
     # prepare result
-    results = prepare_result(img_np, pred_probs, clicks, None, 1, False, os.path.basename(file_url))
+    results = prepare_result(img=img_np, pred_probs=pred_probs, clicks=clicks, gt_mask_file=None, tolerance=1, view_img=False, filename=os.path.basename(file_url))
     # return
     return jsonify(results)
 
