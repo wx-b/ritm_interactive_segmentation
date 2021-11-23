@@ -221,8 +221,8 @@ def view_image(filename:str):
         return 'Image not found!'
     return send_file(path)
         
-
+streamer = ThreadedStreamer(predict, batch_size=1, max_latency=0.01)
 if __name__ == "__main__":
-    streamer = ThreadedStreamer(predict, batch_size=1, max_latency=0.01)
+    # gunicorn -w 4 -b 0.0.0.0:5005 server:app
     app.run(port=5005, debug=True, host= '0.0.0.0')
     print('Flask started')
