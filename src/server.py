@@ -26,7 +26,7 @@ TARGET_IOU = 0.95
 TEMP_PATH = 'temp/'
 os.makedirs(TEMP_PATH, exist_ok=True)
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device(os.environ.get('DEVICE', 'cpu'))
 cfg = exp.load_config_file('./config.yml', return_edict=True)
 checkpoint_path = utils.find_checkpoint(cfg.INTERACTIVE_MODELS_PATH, 'coco_lvis_h18_itermask')
 model = utils.load_is_model(checkpoint_path, device)
@@ -222,7 +222,7 @@ def view_image(filename:str):
     return send_file(path)
         
 
+streamer = ThreadedStreamer(predict, batch_size=1, max_latency=0.01)
 if __name__ == "__main__":
-    streamer = ThreadedStreamer(predict, batch_size=1, max_latency=0.01)
     app.run(port=5005, debug=True, host= '0.0.0.0')
     print('Flask started')
