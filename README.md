@@ -1,3 +1,5 @@
+The original repo is from saic-vul(https://github.com/saic-vul/ritm_interactive_segmentation.git), I have researched and used this for education purpose.
+
 ## Reviving Iterative Training with Mask Guidance for Interactive Segmentation 
 
 <p align="center">
@@ -298,10 +300,6 @@ python3 scripts/evaluate_model.py f-BRS-B --checkpoint=hrnet18s_cocolvis_itermas
 # This command evaluates HRNetV2-W18-C+OCR ITER-M model in NoBRS mode on GrabCut and Berkeley datasets.
 python3 scripts/evaluate_model.py NoBRS --checkpoint=hrnet18_cocolvis_itermask_3p --datasets=GrabCut,Berkeley
 ```
-
-### Jupyter notebook
-
-You can also interactively experiment with our models using [test_any_model.ipynb](./notebooks/test_any_model.ipynb) Jupyter notebook.
 
 ## Training
 
