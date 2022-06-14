@@ -13,9 +13,12 @@ from skimage import measure
 from PIL import Image, ImageDraw, ImageFont
 from imantics import Polygons, Mask, Annotation
 from datetime import datetime
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file,g
 from werkzeug.utils import secure_filename
 from service_streamer import ThreadedStreamer, Streamer
+import requests
+from io import BytesIO
+from functools import lru_cache
 
 EVAL_MAX_CLICKS = 20
 MODEL_THRESH = 0.49
@@ -23,7 +26,7 @@ TARGET_IOU = 0.95
 TEMP_PATH = 'temp/'
 os.makedirs(TEMP_PATH, exist_ok=True)
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device(os.environ.get('DEVICE', 'cpu'))
 cfg = exp.load_config_file('./config.yml', return_edict=True)
 checkpoint_path = utils.find_checkpoint(cfg.INTERACTIVE_MODELS_PATH, 'coco_lvis_h18_itermask')
 model = utils.load_is_model(checkpoint_path, device)
@@ -37,7 +40,9 @@ predictor = get_predictor(model, brs_mode, device, prob_thresh=MODEL_THRESH)
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 10 # 10MB max
 app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif']
+request_count = [0]
 
+@app.route("/interactive_segmentation", methods=["POST"])
 @app.route("/interactive_segmentation_pro", methods=["POST"])
 def main():
     """Main method for interactive segmentation
@@ -65,6 +70,7 @@ def main():
         if os.path.exists(file_path):
             img = Image.open(file_path)
         elif file_url.startswith('oss://'): #TODO
+            raise NotImplementedError('OSS is not supported yet')
             # if region is the same:
                 # try to load file from OSS internal
                 # img = ...
@@ -184,7 +190,6 @@ def view_image(filename:str):
         return 'Image not found!'
     return send_file(path)
         
-
 if __name__ == "__main__":
     streamer = ThreadedStreamer(predict, batch_size=1, max_latency=0.01)
     app.run(port=5005, debug=False, host= '0.0.0.0')

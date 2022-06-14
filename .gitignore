@@ -1,15 +1,15 @@
 .idea/*
 *__pycache__*
 # weights
-experiments
-pretrained_models
+src/experiments
+src/pretrained_models
 *.so
 *.ipynb_checkpoints*
 *.yml
 *.json
 # datasets/
-temp/
-images/
+src/temp/
+src/images/
 .gitignore
 weights/coco_lvis_h32_itermask.pth
 .vscode/
