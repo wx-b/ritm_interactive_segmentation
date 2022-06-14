@@ -1,7 +1,7 @@
 from operator import pos
 # import flask
 import matplotlib.pyplot as plt
-import sys, random, os, json, glob
+import sys, random, os, json, glob, requests
 import numpy as np
 import torch, cv2
 from isegm.utils import vis, exp
@@ -38,19 +38,19 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 10 # 10MB max
 app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif']
 
-@app.route("/interactive_segmentation", methods=["POST"])
+@app.route("/interactive_segmentation_pro", methods=["POST"])
 def main():
     """Main method for interactive segmentation
     """
     img_file = request.files.get('image', None)
     gt_mask_file = request.files.get('gt_mask', None)
-    click_history = eval(request.form['click_history'])
-    prev_polygon = eval(request.form['prev_polygon'])
-    file_url:str = request.form.get('file_url', None)
+    click_history = request.json['click_history']
+    prev_polygon = request.json['prev_polygon']
+    file_url:str = request.json.get('file_url', None)
     prev_mask = request.files.get('prev_mask', None) 
-    tolerance = int(request.form.get('tolerance', 1))
-    view_img = request.form.get('view_img', False)
-    view_img = True if view_img.lower() == 'true' else False
+    tolerance = int(request.json.get('tolerance', 1))
+    view_img = request.json.get('view_img', False)
+    # view_img = True if view_img == True else False
     img:Image = None
     filename:str = None
 
@@ -60,7 +60,7 @@ def main():
         img = Image.open(img_file)
     else:
         # try load from temp first
-        filename = file_url.split('/')[-1]
+        filename = file_url.split('/')[-1].split('?')[0]
         file_path = TEMP_PATH+filename
         if os.path.exists(file_path):
             img = Image.open(file_path)
@@ -72,10 +72,9 @@ def main():
                 # try to load file from OSS external
                 # img = ...
             img.save(file_path)
-        elif file_url: #TODO
-            filename = file_url.split('/')[-1]
+        elif file_url:
             # load file from url
-            # img = ...
+            img = Image.open(requests.get(file_url, stream=True).raw)
             img.save(file_path)
     
     # processing imputs
@@ -88,6 +87,7 @@ def main():
     results = prepare_result(img_np, pred_probs, clicks, gt_mask_file, tolerance, view_img, filename)
 
     # return
+    print(f'Returned polygon with: {results}')
     return jsonify(results)
 
 def processing_inputs(img:Image, click_history:list, prev_polygon:list):
@@ -187,5 +187,5 @@ def view_image(filename:str):
 
 if __name__ == "__main__":
     streamer = ThreadedStreamer(predict, batch_size=1, max_latency=0.01)
-    app.run(port=5005, debug=True, host= '0.0.0.0')
+    app.run(port=5005, debug=False, host= '0.0.0.0')
     print('Flask started')
