@@ -54,7 +54,7 @@ def main():
     prev_mask = request.files.get('prev_mask', None) 
     tolerance = int(request.form.get('tolerance', 1))
     view_img = request.form.get('view_img', False)
-    view_img = False
+    # view_img = False
     # view_img = True if view_img.lower() == 'true' else False
     img:Image = None
     filename:str = None
