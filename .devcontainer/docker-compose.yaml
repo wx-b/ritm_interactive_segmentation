@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  unicorn:
+    image: ritm:latest
+    build:
+      context: ..
+      dockerfile: ./.devcontainer/Dockerfile
+    stdin_open: true
+    tty: true
+    privileged: true
+    ipc: host
+    network_mode: host
+    shm_size: '32G'
+    # ports:
+    #   - "8888:8888"
+    environment:
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility,graphics
+      # Display variables for visualization
+      DISPLAY: $DISPLAY
+      QT_X11_NO_MITSHM: 1
+    volumes:
+      # Local project directory
+      - ..:/work
+      # Local data directory
+      - $HOME/data/:/root/data/
+      # Checkpoints
+      - $HOME/checkpoints:/root/checkpoints
+      # Local usb devices for cameras
+      - usb_devices:/dev/bus/usb
+      # Graphical output
+      - x11_forwarding:/tmp/.X11-unix:rw
+      # Mount the host's ~.ssh directory to the container's /root/.ssh directory so that the container can access the host's SSH keys
+      - ssh_keys:/root/.ssh
+       # Mount .torch folder where pytorch standard models (i.e. resnet34) are cached
+      - torch_folder:/root/.torch
+      # Mount a customizable .bashrc and preserve bash history file for development
+      - ./user/.bash_history:/root/.bash_history
+      - ./user/.bashrc:/root/.bashrc
+    working_dir: /root/unicorn
+    command: /bin/bash
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    
